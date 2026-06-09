@@ -1,104 +1,104 @@
 ---
 name: yss-zentao-effort-fill
-description: 根据腾讯文档/企业微信智能表格填写赢时胜禅道工时。当用户提到“填禅道工时”“补工时”“工时确认”“项目月历”“今天工时还没填”等场景时必须使用本 skill。读取工作记录的“日期、时间、任务名称、工作内容”，以任务名称为主推理禅道项目，逐日填写、保存并回读校验；dry-run、无数据、部分失败、未保存均不得声称完成。
-author: jiya1996
-version: 5.0
+description: Fill Zentao effort/work-hour confirmation from a structured work log. Use when an agent needs to read records with date, time range, task name, and work content, infer or search the target project, fill the Zentao effort confirmation page, click Save, and verify persistence after page reload. Dry-run, no-save, empty data, partial failures, and unverified saves must not be reported as complete.
+author: JiyaHe
+version: 5.1
 last_verified: 2026-06-09
 agent_created: true
 ---
 
-# 赢时胜禅道工时填报助手
+# Zentao Effort Fill Skill
 
-制作人：JiyaHe
+Producer: JiyaHe
 
-## 使用场景
+## Purpose
 
-用户提到以下任一意图时使用本 skill：
-- 填禅道工时、补工时、提工时、工时确认
-- 项目月历、禅道工时没填、今天/本周工时还没填
-- 根据腾讯文档、企微智能表格、工作日志填写工时
+Use this skill to fill Zentao effort/work-hour confirmation records from a minimal work log. The expected source columns are:
 
-## 数据来源
+- `日期` / `date`
+- `时间` / `time`
+- `任务名称` / `task name`
+- `工作内容` / `work content`
 
-优先读取用户维护的腾讯文档智能表格：
+The script is self-contained and does not import or depend on any overtime-submission skill.
 
-- URL：`https://docs.qq.com/smartsheet/DTnN6aU1HaG9ORFpa?tab=t00i2h&viewId=v2JKhc`
-- 表格/视图：工作记录
-- 字段：`日期 / 时间 / 任务名称 / 工作内容`
+## Required Configuration
 
-WorkBuddy 必须通过腾讯文档/企业微信连接器读取表格记录，并导出为临时 JSON 或 CSV 后调用脚本。无法读取、无权限、字段缺失、导出为空时必须停止并说明原因。
-
-支持日期和时间格式：
-- 日期：`2026年5月28日`、`2026-05-28`、`2026/05/28`
-- 时间：`09:00-12:00`、`09：00-21：00`
-- 工时：跨完整午休 `12:00-13:00`、晚休 `18:00-19:00` 时自动扣除；如 `09:00-18:00` 记 8h，`09:00-21:00` 记 10h。
-
-## 项目推理规则
-
-项目推理以 `任务名称` 为第一来源，`工作内容` 仅作为描述和辅助信息。
-
-- 命中 AI/知识库/数字员工/wiki/weknora/AI平台/AMS-AI/产研AI/AI端到端/AI提效/大模型/智能体/赋能/提效 等关键词时，项目为 `AMS_研发体系_AI提效项目`，搜索关键词为 `AI提效`。
-- 命中客户名或项目关键词时，用该关键词在禅道项目下拉搜索；保存成功后写入本 skill 自己的 `工作日志映射.json`，下次自动复用。
-- 无法推理时才使用兜底项目 `AMS_研发体系_AI提效项目`，dry-run 输出会标明“兜底”。
-- 不允许把所有日期无脑合并到兜底项目；必须先逐条按任务名称拆解，再按“日期 + 项目”聚合。
-
-## 标准流程
-
-先 dry-run 看计划：
+Set organization-specific values before formal use:
 
 ```powershell
-$env:PYTHONIOENCODING='utf-8'
-python scripts\fill_zentao_effort.py --start 2026-06-01 --end 2026-06-05 --worklog-json "C:\Users\hejia\AppData\Local\Temp\yss_worklog.json" --dry-run
+$env:YSS_ZENTAO_HOST = "zentao.example.com"
+$env:YSS_WORKLOG_SOURCE_URL = "<optional-worklog-source-url>"
+$env:YSS_ZENTAO_DEFAULT_PROJECT = "<default-project-name>"
+$env:YSS_ZENTAO_DEFAULT_PROJECT_QUERY = "<project-search-keyword>"
+$env:YSS_ZENTAO_DEFAULT_SYSTEM = "<default-system-name>"
 ```
 
-确认后正式填写并保存：
+Do not hard-code personal document URLs, local paths, credentials, cookies, tokens, customer names, or internal project names in this repository.
+
+## Data Input
+
+Prefer exporting the work log from the agent platform connector to temporary JSON or CSV, then call:
 
 ```powershell
-$env:PYTHONIOENCODING='utf-8'
-python scripts\fill_zentao_effort.py --start 2026-06-01 --end 2026-06-05 --worklog-json "C:\Users\hejia\AppData\Local\Temp\yss_worklog.json"
+$env:PYTHONIOENCODING = "utf-8"
+python scripts\fill_zentao_effort.py --start 2026-06-01 --end 2026-06-05 --worklog-json "C:\path\to\worklog.json" --dry-run
 ```
 
-脚本参数：
-- `--start YYYY-MM-DD`：起始日期，必填
-- `--end YYYY-MM-DD`：结束日期，必填
-- `--worklog-json PATH`：腾讯文档/企微连接器导出的 JSON
-- `--worklog-csv PATH`：腾讯文档导出的 CSV
-- `--worklog PATH`：本地 Excel 工作日志
-- `--mapping PATH`：项目映射 JSON；默认在本 skill 目录下
-- `--dry-run`：只打印计划，不打开网页，不填写，不保存
-- `--no-save`：填入页面但不保存，仅调试使用
+Formal run:
 
-## 填写行为
+```powershell
+$env:PYTHONIOENCODING = "utf-8"
+python scripts\fill_zentao_effort.py --start 2026-06-01 --end 2026-06-05 --worklog-json "C:\path\to\worklog.json"
+```
 
-- 每条工作日志先按 `任务名称` 推理项目。
-- 同一天同项目的任务聚合为一条禅道工时行。
-- 禅道“名称”使用聚合后的任务名称；多任务用顿号连接。
-- 禅道“描述”优先使用 `工作内容`，为空时使用 `任务名称`，并按上午/下午/晚上拼接。
-- 表头 `项目(维护说明)`、`对应系统(维护说明)` 右侧红色“维护说明”均可点击查看公司级维护规则；项目或系统选择不确定时先参考这些规则。
-- 选择项目后等待禅道自动带出“对应系统”；若没有带出，先参考 `对应系统(维护说明)`，再选择兜底值 `AMS_估值核算`。
-- 每行最右侧的 `+` 是新增 1 行，`X` 是删除当前行；需要新增/删除时优先使用对应行右侧图标。
-- 保存前删除不属于本次计划的默认/多余工时行，只保留本次填写行和请假行。
-- 保存前覆盖 `window.confirm = () => true`，并自动确认“应出勤/消耗工时”等弹窗。
-- 填写到页面不等于完成；必须点击页面底部/表格下方的“保存”按钮提交，否则刷新网页后填写内容会丢失。
-- 保存后必须刷新或重新打开同一天工时确认页，回读校验名称/工时/项目/任务类型/描述；对应系统优先使用项目自动带出值，缺失时使用 `AMS_估值核算` 兜底。
+Supported formats:
 
-## 严格完成标准
+- Date: `2026年5月28日`, `2026-05-28`, `2026/05/28`, Unix millisecond timestamp.
+- Time range: `09:00-12:00`, `09：00-21：00`.
+- Hours: subtract full lunch break `12:00-13:00` and evening break `18:00-19:00` only when the time range fully covers them.
 
-只有同时满足以下条件时才能告诉用户“已完成”：
+## Project Inference
 
-- 目标日期范围内至少读取到 1 条有效工时记录。
-- 正式模式运行，不是 dry-run，也不是 `--no-save`。
-- 每个需要填写的日期都已点击保存。
-- 保存后刷新或重新打开页面，服务器端回读校验通过。
-- 没有失败日期、未处理验证码、未确认弹窗、页面未保存等遗留状态。
+Project inference uses `任务名称` as the primary source. `工作内容` is only description and auxiliary context.
 
-否则必须明确当前状态：
-- “只完成了 dry-run，还没有填写。”
-- “没有从腾讯文档读到可填写记录。”
-- “某日期保存后刷新回读不一致，未确认完成。”
-- “某日期填写失败，已跳过，需人工处理或重跑。”
+- Tasks matching AI, knowledge-base, digital-employee, wiki, platform, large-model, agent, enablement, or efficiency keywords map to `YSS_ZENTAO_DEFAULT_PROJECT`.
+- Tasks containing customer or project keywords use that keyword to search the Zentao project dropdown.
+- If no rule matches, fall back to `YSS_ZENTAO_DEFAULT_PROJECT`, and mark it as fallback in dry-run output.
+- Never merge all daily work into the fallback project without first classifying each task.
 
-## 本地文件
+## Browser Flow
 
-- `scripts/fill_zentao_effort.py`：本 skill 的自包含主入口，包含数据解析、项目推理、浏览器连接、页面填写、保存确认和回读校验。
-- `工作日志映射.json`：运行时生成的任务到禅道项目映射，属于本 skill 私有数据。
+The host agent must provide browser automation capability such as Playwright/CDP. The browser should already be logged in, or the agent must pause for manual login and captcha handling.
+
+For each date:
+
+- Open the Zentao effort confirmation page for that date.
+- Reuse an existing empty row or click the row-right `+` to add a row.
+- Fill name, hours, project, system, task type, and description.
+- After selecting project, wait for Zentao to auto-populate system. If missing, read the clickable `对应系统(维护说明)` rule when available and use `YSS_ZENTAO_DEFAULT_SYSTEM`.
+- Use row-right `X` to delete surplus default rows before saving.
+- Click the page/table Save button. Filling the page is not completion.
+- Reload or reopen the same date page and verify persisted rows. If reload readback fails, report failure.
+
+## Strict Completion Rules
+
+Only report completion when all conditions are true:
+
+- At least one valid work-log record was read for the date range.
+- Formal mode was used, not dry-run and not `--no-save`.
+- Every target date clicked Save.
+- The page was reloaded or reopened after saving, and server-side readback validation passed.
+- There are no skipped dates, unhandled dialogs, captcha blockers, or unsaved page states.
+
+Otherwise report the exact incomplete state, such as:
+
+- Dry-run only; nothing was filled or saved.
+- No fillable work-log records were read.
+- A date failed after save/reload validation.
+- A date was skipped and needs manual handling or rerun.
+
+## Files
+
+- `scripts/fill_zentao_effort.py`: self-contained parser, inference engine, browser filler, save, and reload validation.
+- `工作日志映射.json`: optional runtime-generated task-to-project mapping. Do not commit personal mappings.

@@ -1,3 +1,10 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+工作日志映射.json
+*.xlsx
+*.xls
+*.csv
+*.json
+!package.json
+!agents/*.json

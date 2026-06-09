@@ -21,20 +21,20 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator, Optional
 
 
-ZENTAO_HOST = os.environ.get("YSS_ZENTAO_HOST", "pm.ysstech.com:8071")
+ZENTAO_HOST = os.environ.get("YSS_ZENTAO_HOST", "zentao.example.com")
 ZENTAO_URL_PREFIX = f"https://{ZENTAO_HOST.split(':')[0]}"
 ZT_EFFORT_URL = (
     f"https://{ZENTAO_HOST}/index.php?m=todo&f=confirmuserconsumed"
     "&day={date}"
 )
 
-DEFAULT_SYSTEM = "AMS_估值核算"
-DEFAULT_AI_PROJECT = "AMS_研发体系_AI提效项目"
-DEFAULT_AI_QUERY = "AI提效"
+DEFAULT_SYSTEM = os.environ.get("YSS_ZENTAO_DEFAULT_SYSTEM", "DEFAULT_SYSTEM")
+DEFAULT_AI_PROJECT = os.environ.get("YSS_ZENTAO_DEFAULT_PROJECT", "DEFAULT_PROJECT")
+DEFAULT_AI_QUERY = os.environ.get("YSS_ZENTAO_DEFAULT_PROJECT_QUERY", DEFAULT_AI_PROJECT)
 DEFAULT_WORKLOG_PATH = Path(
     os.environ.get(
         "YSS_WORKLOG_PATH",
-        r"E:\YssWorkfiles\002工作skill\工作日志\工作日志.xlsx",
+        "worklog.xlsx",
     )
 )
 WORKLOG_SHEET_NAME = "工作日志"
@@ -488,7 +488,7 @@ class MappingStore:
 
 
 AI_PROJECT_PATTERN = re.compile(
-    r"AI|ai|知识库|数字员工|wiki|weknora|AI平台|AMS-AI|产研AI|AI端到端|AI提效|大模型|智能体|本体|赋能|提效",
+    r"AI|ai|知识库|数字员工|wiki|knowledge|platform|automation|agent|大模型|智能体|本体|赋能|提效",
     re.IGNORECASE,
 )
 CUSTOMER_PATTERN = re.compile(
