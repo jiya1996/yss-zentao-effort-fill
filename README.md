@@ -7,6 +7,8 @@
 
 Producer: JiyaHe
 
+[中文说明](README.zh-CN.md)
+
 ## What It Does
 
 - Reads minimal work-log records with `日期 / 时间 / 任务名称 / 工作内容`.
@@ -144,6 +146,7 @@ Supported date/time examples:
 yss-zentao-effort-fill/
 ├─ SKILL.md
 ├─ README.md
+├─ README.zh-CN.md
 ├─ .gitignore
 └─ scripts/
    └─ fill_zentao_effort.py
