@@ -2,8 +2,8 @@
 name: yss-zentao-effort-fill
 description: Fill Zentao effort/work-hour confirmation from a structured work log. Use when an agent needs to read records with date, time range, task name, and work content, infer or search the target project, fill the Zentao effort confirmation page, click Save, and verify persistence after page reload. Dry-run, no-save, empty data, partial failures, and unverified saves must not be reported as complete.
 author: JiyaHe
-version: 5.1
-last_verified: 2026-06-09
+version: 5.2
+last_verified: 2026-07-03
 agent_created: true
 ---
 
@@ -56,7 +56,7 @@ Supported formats:
 
 - Date: `2026年5月28日`, `2026-05-28`, `2026/05/28`, Unix millisecond timestamp.
 - Time range: `09:00-12:00`, `09：00-21：00`.
-- Hours: subtract full lunch break `12:00-13:00` and evening break `18:00-19:00` only when the time range fully covers them.
+- Hours: subtract lunch `12:00-13:00` and evening `18:00-19:00` by **overlap** with the work period (not only when the full break is covered). Examples: `09:00-18:00` = 8h, `09:00-21:00` = 10h.
 
 ## Project Inference
 

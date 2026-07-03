@@ -287,17 +287,16 @@ def _parse_hours(value: str) -> Optional[float]:
 
 
 def calc_hours_from_range(start: str, end: str) -> float:
-    sh, sm = int(start[:2]), int(start[3:5])
-    eh, em = int(end[:2]), int(end[3:5])
-    start_min = sh * 60 + sm
-    end_min = eh * 60 + em
+    start_min = int(start[:2]) * 60 + int(start[3:5])
+    end_min = int(end[:2]) * 60 + int(end[3:5])
     total_min = end_min - start_min
     if total_min <= 0:
         raise ValueError(f"结束时间 {end} 不晚于开始时间 {start}")
 
     for break_start, break_end in ((12 * 60, 13 * 60), (18 * 60, 19 * 60)):
-        if start_min <= break_start and end_min >= break_end:
-            total_min -= break_end - break_start
+        overlap = min(end_min, break_end) - max(start_min, break_start)
+        if overlap > 0:
+            total_min -= overlap
     return int((total_min / 60.0) * 2) / 2
 
 
@@ -1151,7 +1150,7 @@ def _save_page_and_confirm(page: Any) -> None:
     page.on("dialog", lambda dialog: dialog.accept())
 
     save_clicked = False
-    for selector in ["button:has-text('保存')", "input[value='保存']", "a:has-text('保存')"]:
+    for selector in ["#submit", "button:has-text('保存')", "input[value='保存']", "a:has-text('保存')"]:
         try:
             page.locator(selector).first.click(timeout=3000)
             save_clicked = True
